@@ -1,0 +1,11 @@
+name: schedule-smoke
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "ping $(date -u)"
