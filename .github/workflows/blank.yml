@@ -1,4 +1,5 @@
 name: Deploy SWU artifacts to staging bucket
+run-name: Deploy SWU → staging: ${{ inputs.source_path }}
 
 on:
   workflow_dispatch:
@@ -9,10 +10,56 @@ on:
         type: string
 
 jobs:
+  # ----------------------------
+  # 1️⃣ Prepare / Validate Job
+  # ----------------------------
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      object_key: ${{ steps.validate.outputs.object_key }}
+
+    steps:
+      - name: Validate input
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          raw="${{ inputs.source_path }}"
+          path="$(printf "%s" "$raw" | sed -e 's/^[[:space:]]\+//' -e 's/[[:space:]]\+$//')"
+
+          if [[ -z "$path" ]]; then
+            echo "source_path cannot be empty"
+            exit 1
+          fi
+
+          echo "object_key=$path" >> "$GITHUB_OUTPUT"
+
+      - name: Show deployment request
+        shell: bash
+        run: |
+          {
+            echo "## SWU Deployment Request"
+            echo ""
+            echo "- Object key: \`${{ inputs.source_path }}\`"
+            echo "- Triggered by: \`${{ github.actor }}\`"
+            echo "- Workflow run: \`${{ github.run_id }}\`"
+            echo ""
+            echo "⚠️ Please verify the object key before approving deployment."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ----------------------------
+  # 2️⃣ Protected Deploy Job
+  # ----------------------------
   deploy-artifacts:
+    needs: prepare
     runs-on: ubuntu-latest
     environment: deploy-test
+
     steps:
       - name: Copy artifact to staging bucket
         shell: bash
-        run: echo "hello"
+        run: |
+          echo "Deploying object:"
+          echo "${{ needs.prepare.outputs.object_key }}"
+          echo "hello"
