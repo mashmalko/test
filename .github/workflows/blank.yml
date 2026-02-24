@@ -1,5 +1,5 @@
 name: Deploy SWU artifacts to staging bucket
-run-name: Deploy SWU → staging: ${{ inputs.source_path }}
+run-name: "Deploy SWU → staging: ${{ inputs.source_path }}"
 
 on:
   workflow_dispatch:
